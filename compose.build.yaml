@@ -1,0 +1,17 @@
+# Optional local build; the NAS normally uses compose.yaml to pull a CI image.
+services:
+  diary:
+    build: .
+    image: yejian-diary:local
+    container_name: yejian-diary
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./data:/data
+    environment:
+      TZ: Asia/Hong_Kong
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

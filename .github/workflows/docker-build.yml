@@ -1,0 +1,135 @@
+name: Test and publish Docker image
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diary-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Tests and container smoke check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.0"
+      - name: Install dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+      - name: Run persistence and recovery tests
+        run: pnpm test
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the production image for testing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: diary:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Verify the actual container
+        run: |
+          docker run --detach --name diary-smoke --publish 127.0.0.1:8787:8787 diary:ci
+          node scripts/container-smoke.mjs
+      - name: Container diagnostics and cleanup
+        if: always()
+        run: |
+          docker logs diary-smoke 2>/dev/null || true
+          docker rm --force --volumes diary-smoke 2>/dev/null || true
+
+  publish:
+    name: Publish to GHCR and optional Docker Hub
+    needs: verify
+    if: github.event_name != 'pull_request' && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set image names
+        id: names
+        env:
+          DH_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DH_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DH_IMAGE: ${{ vars.DOCKERHUB_IMAGE_NAME }}
+        shell: bash
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "ghcr=ghcr.io/${REPO}" >> "$GITHUB_OUTPUT"
+          echo "images<<IMAGES" >> "$GITHUB_OUTPUT"
+          echo "ghcr.io/${REPO}" >> "$GITHUB_OUTPUT"
+          if [ -n "$DH_USER" ] && [ -n "$DH_TOKEN" ]; then
+            NAME="${DH_IMAGE:-${GITHUB_REPOSITORY#*/}}"
+            echo "docker.io/${DH_USER,,}/${NAME,,}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "IMAGES" >> "$GITHUB_OUTPUT"
+          if [ -n "$DH_USER" ] && [ -n "$DH_TOKEN" ]; then
+            echo "dockerhub=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to Docker Hub when both secrets exist
+        if: steps.names.outputs.dockerhub == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Image tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.names.outputs.images }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+            type=sha,prefix=sha-,format=long
+            type=ref,event=tag
+          labels: |
+            org.opencontainers.image.title=Yejian Diary
+            org.opencontainers.image.description=Private NAS journal
+      - name: Build and publish
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          # Matches the existing Kikoeru setup for an x86_64 NAS.
+          # Set repository variable IMAGE_PLATFORMS to linux/amd64,linux/arm64 for both.
+          platforms: ${{ vars.IMAGE_PLATFORMS || 'linux/amd64' }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Write deployment summary
+        env:
+          IMAGE: ${{ steps.names.outputs.ghcr }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          echo '## NAS image' >> "$GITHUB_STEP_SUMMARY"
+          echo "\`DIARY_IMAGE=${IMAGE}@${DIGEST}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Use this immutable image in the NAS .env file, then run:' >> "$GITHUB_STEP_SUMMARY"
+          echo '`docker compose pull && docker compose up -d`' >> "$GITHUB_STEP_SUMMARY"

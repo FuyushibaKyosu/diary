@@ -1,0 +1,21 @@
+services:
+  diary:
+    image: ${DIARY_IMAGE:?Set DIARY_IMAGE in .env to the image published by GitHub Actions}
+    container_name: yejian-diary
+    restart: unless-stopped
+    ports:
+      - "${DIARY_PORT:-8787}:8787"
+    environment:
+      TZ: ${TZ:-Asia/Hong_Kong}
+      APP_ORIGIN: ${APP_ORIGIN:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # 通过反向代理使用 HTTPS 时，设置实际网址并启用安全 Cookie：
+      # APP_ORIGIN: https://diary.example.com
+      # COOKIE_SECURE: "true"
+      # DIARY_PASSWORD: "仅首次初始化时使用的密码，至少8位"
+    volumes:
+      - ${DIARY_DATA_DIR:-./data}:/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
