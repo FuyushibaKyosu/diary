@@ -498,7 +498,7 @@ function App() {
     [saveState, setSaveState] = useState("saved"),
     [saveError, setSaveError] = useState(""),
     [sidebar, setSidebar] = useState(false),
-    [listMobile, setListMobile] = useState(false),
+    [sidebarCollapsed, setSidebarCollapsed] = useState(false),
     [menu, setMenu] = useState(false),
     [tagInput, setTagInput] = useState(""),
     [history, setHistory] = useState<HistoryItem[]>([]),
@@ -568,7 +568,6 @@ function App() {
     setEditorKey((k) => k + 1);
     setSaveState(dirty.current ? "pending" : "saved");
     setTagInput("");
-    setListMobile(false);
     setMenu(false);
     if (dirty.current) timer.current = setTimeout(() => void flush(), 900);
   }
@@ -697,19 +696,23 @@ function App() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
   const select = async (e: Entry) => {
+    if (view === "calendar" && e.id === current.current?.id) setView("all");
     if (e.id === current.current?.id) {
-      setListMobile(false);
+      setSidebar(false);
       return;
     }
-    if (await flush()) showEntry(e);
+    if (await flush()) {
+      if (view === "calendar") setView("all");
+      showEntry(e);
+      setSidebar(false);
+    }
   };
   const changeView = async (next: View, t = "") => {
     if (!(await flush())) return;
     setView(next);
     setTag(t);
-    setSidebar(false);
+    if (next === "calendar") setSidebar(false);
     setQuery("");
-    setListMobile(true);
     if (next !== "calendar") {
       const first = entriesRef.current.find((e) =>
         next === "trash"
@@ -892,7 +895,15 @@ function App() {
           onClick={() => setSidebar(false)}
         />
       )}
-      <aside className={"sidebar" + (sidebar ? " open" : "")}>
+      <aside
+        id="diary-sidebar"
+        aria-label="日记导航"
+        className={
+          "sidebar" +
+          (sidebar ? " open" : "") +
+          (sidebarCollapsed ? " collapsed" : "")
+        }
+      >
         <div className="brand">
           <div className="brand-icon">
             <BookOpen size={23} strokeWidth={1.6} />
@@ -901,7 +912,13 @@ function App() {
             <strong>页间</strong>
             <span>我的私人空间</span>
           </div>
-          <IconButton label="收起侧栏" onClick={() => setSidebar(false)}>
+          <IconButton
+            label="收起侧栏"
+            onClick={() => {
+              setSidebar(false);
+              setSidebarCollapsed(true);
+            }}
+          >
             <PanelLeftClose size={17} />
           </IconButton>
         </div>
@@ -920,64 +937,144 @@ function App() {
           <Plus size={17} />
           写日记<span>＋</span>
         </button>
-        <div className="nav-section-title">日记空间</div>
-        <nav>
-          {(
-            [
-              {
-                key: "all",
-                label: "全部日记",
-                icon: BookOpen,
-                count: activeEntries.length,
-              },
-              { key: "calendar", label: "日历", icon: CalendarDays },
-              {
-                key: "favorites",
-                label: "我的收藏",
-                icon: Star,
-                count: activeEntries.filter((e) => e.favorite).length,
-              },
-            ] as const
-          ).map((item) => (
-            <button
-              key={item.key}
-              className={"nav-item" + (view === item.key ? " selected" : "")}
-              onClick={() => void changeView(item.key)}
-            >
-              <item.icon size={17} />
-              <span>{item.label}</span>
-              {"count" in item && <small>{item.count}</small>}
-            </button>
-          ))}
-        </nav>
-        <div className="nav-section-title tags-heading">
-          我的标签 <Hash size={13} />
-        </div>
-        <div className="sidebar-tags">
-          {tags.length ? (
-            tags.map((t) => (
+        <div className="sidebar-scroll">
+          <nav>
+            {(
+              [
+                {
+                  key: "all",
+                  label: "全部日记",
+                  icon: BookOpen,
+                  count: activeEntries.length,
+                },
+                { key: "calendar", label: "日历", icon: CalendarDays },
+                {
+                  key: "favorites",
+                  label: "我的收藏",
+                  icon: Star,
+                  count: activeEntries.filter((e) => e.favorite).length,
+                },
+              ] as const
+            ).map((item) => (
               <button
-                key={t}
-                className={
-                  "nav-item tag-nav" +
-                  (view === "tag" && tag === t ? " selected" : "")
-                }
-                onClick={() => void changeView("tag", t)}
+                key={item.key}
+                className={"nav-item" + (view === item.key ? " selected" : "")}
+                onClick={() => void changeView(item.key)}
               >
-                <span className="tag-dot" />
-                <span>{t}</span>
-                <small>
-                  {activeEntries.filter((e) => e.tags.includes(t)).length}
-                </small>
+                <item.icon size={17} />
+                <span>{item.label}</span>
+                {"count" in item && <small>{item.count}</small>}
               </button>
-            ))
-          ) : (
-            <p className="sidebar-hint">
-              给日记加一个标签
-              <br />
-              让回忆更容易找到
-            </p>
-          )}
+            ))}
+          </nav>
+          <details className="tag-section">
+            <summary className="nav-section-title tags-heading">
+              我的标签 <ChevronRight size={13} />
+            </summary>
+            <div className="sidebar-tags">
+              {tags.length ? (
+                tags.map((t) => (
+                  <button
+                    key={t}
+                    className={
+                      "nav-item tag-nav" +
+                      (view === "tag" && tag === t ? " selected" : "")
+                    }
+                    onClick={() => void changeView("tag", t)}
+                  >
+                    <span className="tag-dot" />
+                    <span>{t}</span>
+                    <small>
+                      {activeEntries.filter((e) => e.tags.includes(t)).length}
+                    </small>
+                  </button>
+                ))
+              ) : (
+                <p className="sidebar-hint">
+                  给日记加一个标签
+                  <br />
+                  让回忆更容易找到
+                </p>
+              )}
+            </div>
+          </details>
+          <section className="sidebar-entries" aria-label="日记列表">
+            <div className="entry-panel-head">
+              <div>
+                <h2>{view === "calendar" ? "全部日记" : title}</h2>
+                <span>{visible.length} 篇记录</span>
+              </div>
+              <IconButton label="新建日记" onClick={() => void create()}>
+                <Plus size={19} />
+              </IconButton>
+            </div>
+            <label className="list-search">
+              <Search size={15} />
+              <input
+                aria-label="筛选日记"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="筛选日记…"
+              />
+            </label>
+            <div className="entry-list">
+              {visible.map((e, i) => (
+                <React.Fragment key={e.id}>
+                  {(i === 0 ||
+                    e.date.slice(0, 7) !== visible[i - 1].date.slice(0, 7)) && (
+                    <div className="month-label">
+                      {dateLabel(e.date, { year: "numeric", month: "long" })}
+                    </div>
+                  )}
+                  <button
+                    className={
+                      "entry-card" +
+                      (draft?.id === e.id && view !== "calendar"
+                        ? " selected"
+                        : "")
+                    }
+                    aria-current={
+                      draft?.id === e.id && view !== "calendar"
+                        ? "page"
+                        : undefined
+                    }
+                    title={e.title || "无标题日记"}
+                    onClick={() => void select(e)}
+                  >
+                    <div className="entry-card-title">
+                      <FileText size={15} />
+                      <strong>
+                        {e.id === draft?.id
+                          ? draft.title || "无标题日记"
+                          : e.title || "无标题日记"}
+                      </strong>
+                      {e.favorite && <Star size={12} fill="currentColor" />}
+                    </div>
+                    <time className="entry-date">
+                      {dateLabel(e.date, { month: "numeric", day: "numeric" })}
+                    </time>
+                  </button>
+                </React.Fragment>
+              ))}
+              {!visible.length && (
+                <div className="list-empty">
+                  <FolderOpen size={27} strokeWidth={1.3} />
+                  <p>
+                    {query
+                      ? "没有匹配的日记"
+                      : view === "trash"
+                        ? "回收站是空的"
+                        : "这里还没有日记"}
+                  </p>
+                  {!query && view === "all" && (
+                    <button onClick={() => void create()}>
+                      写下第一篇 <ArrowRight size={13} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
         </div>
         <div className="sidebar-bottom">
           <button
@@ -991,32 +1088,35 @@ function App() {
             <Settings size={17} />
             <span>设置与备份</span>
           </button>
-          <div className="workspace-footer">
-            <div className="avatar">我</div>
-            <div>
-              <strong>私人日记空间</strong>
-              <span>
-                <span className="status-dot" />
-                已登录
-              </span>
-            </div>
-            <LockKeyhole size={14} />
-          </div>
         </div>
       </aside>
       <main className="workspace">
         <header className="topbar">
           <div className="breadcrumbs">
             <button
-              className="mobile-menu icon-button"
+              className={
+                "mobile-menu icon-button" +
+                (sidebarCollapsed ? " desktop-visible" : "")
+              }
               aria-label="展开导航"
-              onClick={() => setSidebar(true)}
+              aria-controls="diary-sidebar"
+              onClick={() => {
+                setSidebarCollapsed(false);
+                setSidebar(true);
+              }}
             >
               <Menu size={19} />
             </button>
             <span className="breadcrumb-home">私人空间</span>
             <ChevronRight size={13} />
-            <button onClick={() => setListMobile(!listMobile)}>{title}</button>
+            <button
+              onClick={() => {
+                setSidebarCollapsed(false);
+                setSidebar(true);
+              }}
+            >
+              {title}
+            </button>
             {draft && view !== "calendar" && (
               <>
                 <ChevronRight size={13} />
@@ -1121,92 +1221,7 @@ function App() {
             onCreate={create}
           />
         ) : (
-          <div
-            className={"writing-workspace" + (listMobile ? " show-list" : "")}
-          >
-            <section className="entry-panel">
-              <div className="entry-panel-head">
-                <div>
-                  <h2>{title}</h2>
-                  <span>{visible.length} 篇记录</span>
-                </div>
-                <IconButton label="新建日记" onClick={() => void create()}>
-                  <Plus size={19} />
-                </IconButton>
-              </div>
-              <label className="list-search">
-                <Search size={15} />
-                <input
-                  aria-label="筛选日记"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="筛选日记…"
-                />
-              </label>
-              <div className="entry-list">
-                {visible.map((e, i) => (
-                  <React.Fragment key={e.id}>
-                    {(i === 0 ||
-                      e.date.slice(0, 7) !==
-                        visible[i - 1].date.slice(0, 7)) && (
-                      <div className="month-label">
-                        {dateLabel(e.date, { year: "numeric", month: "long" })}
-                      </div>
-                    )}
-                    <button
-                      className={
-                        "entry-card" + (draft?.id === e.id ? " selected" : "")
-                      }
-                      onClick={() => void select(e)}
-                    >
-                      <div className="entry-card-title">
-                        <FileText size={15} />
-                        <strong>
-                          {e.id === draft?.id
-                            ? draft.title || "无标题日记"
-                            : e.title || "无标题日记"}
-                        </strong>
-                        {e.favorite && <Star size={12} fill="currentColor" />}
-                      </div>
-                      <p>
-                        {e.plain.replace(/\n/g, " ").slice(0, 70) ||
-                          "还没有写下内容…"}
-                      </p>
-                      <div className="entry-card-meta">
-                        <time>
-                          {dateLabel(e.date, {
-                            month: "numeric",
-                            day: "numeric",
-                          })}
-                        </time>
-                        {e.tags[0] && <span>{e.tags[0]}</span>}
-                      </div>
-                    </button>
-                  </React.Fragment>
-                ))}
-                {!visible.length && (
-                  <div className="list-empty">
-                    <FolderOpen size={27} strokeWidth={1.3} />
-                    <p>
-                      {query
-                        ? "没有匹配的日记"
-                        : view === "trash"
-                          ? "回收站是空的"
-                          : "这里还没有日记"}
-                    </p>
-                    {!query && view === "all" && (
-                      <button onClick={() => void create()}>
-                        写下第一篇 <ArrowRight size={13} />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="entry-panel-footer">
-                <LockKeyhole size={12} />
-                只属于你的记录
-              </div>
-            </section>
+          <div className="writing-workspace">
             <section className="document-panel">
               {draft ? (
                 <>

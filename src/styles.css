@@ -58,6 +58,7 @@ select {
 :where(:root[data-focus-mode="keyboard"]) select:focus-visible,
 :where(:root[data-focus-mode="keyboard"]) textarea:focus-visible,
 :where(:root[data-focus-mode="keyboard"]) a:focus-visible,
+:where(:root[data-focus-mode="keyboard"]) summary:focus-visible,
 :where(:root[data-focus-mode="keyboard"]) [contenteditable]:focus-visible {
   outline: 2px solid #7b916a;
 }
@@ -147,19 +148,31 @@ button.primary:hover {
   overflow: hidden;
 }
 .sidebar {
-  width: 228px;
+  width: 260px;
   flex-shrink: 0;
   background: #f6f5f1;
   border-right: 1px solid #ecece5;
   display: flex;
   flex-direction: column;
-  padding: 24px 14px 0;
+  padding: 20px 12px 0;
+}
+.sidebar > * {
+  flex-shrink: 0;
+}
+.sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 3px 16px;
+  margin: 0 -3px;
+  scrollbar-width: thin;
+  padding-top: 10px;
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 7px 28px;
+  margin: 0 7px 18px;
 }
 .brand-icon {
   width: 37px;
@@ -187,10 +200,11 @@ button.primary:hover {
 }
 .brand .icon-button {
   margin-left: auto;
-  opacity: 0;
+  opacity: 0.6;
   width: 24px;
 }
-.brand:hover .icon-button {
+.brand:hover .icon-button,
+.brand:focus-within .icon-button {
   opacity: 1;
 }
 .search-trigger {
@@ -238,7 +252,7 @@ button.primary:hover {
 .nav-section-title {
   font-size: 10px;
   color: #888a7f;
-  margin: 30px 12px 11px;
+  margin: 20px 12px 8px;
   letter-spacing: 1px;
 }
 .nav-item {
@@ -275,7 +289,20 @@ button.primary:hover {
 .tags-heading {
   display: flex;
   justify-content: space-between;
-  margin-top: 32px;
+  margin: 14px 0 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 5px;
+}
+.tags-heading::-webkit-details-marker {
+  display: none;
+}
+.tags-heading:hover {
+  background: #eeeee8;
+}
+.tag-section[open] .tags-heading svg {
+  transform: rotate(90deg);
 }
 .tag-dot {
   width: 7px;
@@ -292,9 +319,7 @@ button.primary:hover {
   background: #a4b4c2;
 }
 .sidebar-tags {
-  overflow-y: auto;
-  flex: 1;
-  min-height: 40px;
+  padding-bottom: 4px;
 }
 .sidebar-hint {
   font-size: 11px;
@@ -303,48 +328,8 @@ button.primary:hover {
   padding: 0 13px;
 }
 .sidebar-bottom {
-  padding-top: 16px;
-}
-.workspace-footer {
-  display: flex;
-  align-items: center;
-  gap: 9px;
+  padding: 6px 0 10px;
   border-top: 1px solid #e5e5dc;
-  margin-top: 17px;
-  padding: 19px 4px;
-}
-.avatar {
-  width: 31px;
-  height: 31px;
-  background: #e8e5d9;
-  color: #7e7b66;
-  border: 1px solid #dedbcd;
-  border-radius: 7px;
-  display: grid;
-  place-items: center;
-  font-size: 12px;
-}
-.workspace-footer strong {
-  font-size: 11px;
-  font-weight: 500;
-}
-.workspace-footer > div > span {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  font-size: 10px;
-  color: #82857b;
-  margin-top: 4px;
-}
-.status-dot {
-  width: 5px;
-  height: 5px;
-  background: #7d946c;
-  border-radius: 50%;
-}
-.workspace-footer > svg {
-  margin-left: auto;
-  color: #92978b;
 }
 .workspace {
   flex: 1;
@@ -451,28 +436,33 @@ button.primary:hover {
   min-height: 0;
   flex: 1;
 }
-.entry-panel {
-  width: 279px;
-  flex-shrink: 0;
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  background: #fdfdfb;
+.sidebar-entries {
+  margin-top: 12px;
 }
 .entry-panel-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 27px 21px 20px;
+  padding: 0 10px 10px;
+}
+.entry-panel-head > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
 }
 .entry-panel-head h2 {
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 600;
-  margin: 0 0 7px;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .entry-panel-head span {
   font-size: 10px;
   color: #8c8f82;
+  flex-shrink: 0;
 }
 .entry-panel-head .icon-button {
   border: 1px solid #e8e9e1;
@@ -484,7 +474,7 @@ button.primary:hover {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin: 0 20px 15px;
+  margin: 0 8px 6px;
   border: 1px solid #e7e8df;
   border-radius: 5px;
   padding: 8px 9px;
@@ -500,9 +490,7 @@ button.primary:hover {
   color: var(--ink);
 }
 .entry-list {
-  overflow-y: auto;
-  flex: 1;
-  padding: 0 10px;
+  padding: 0 2px;
 }
 .month-label {
   font-size: 10px;
@@ -511,26 +499,34 @@ button.primary:hover {
   letter-spacing: 0.5px;
 }
 .entry-card {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   text-align: left;
   width: 100%;
-  padding: 15px 13px 13px;
-  border-radius: 6px;
-  margin-bottom: 5px;
-  border: 1px solid transparent;
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 5px;
+  margin-bottom: 2px;
 }
 .entry-card:hover {
   background: #f2f3ec;
 }
 .entry-card.selected {
   background: #edf0e7;
-  border-color: #e6eade;
 }
 .entry-card-title {
   display: flex;
   align-items: center;
   gap: 8px;
   color: #555f49;
+  min-width: 0;
+  flex: 1;
+}
+.entry-date {
+  font-size: 10px;
+  color: var(--muted);
+  flex-shrink: 0;
 }
 .entry-card-title strong {
   overflow: hidden;
@@ -544,49 +540,12 @@ button.primary:hover {
 .entry-card-title > svg:last-child:not(:first-child) {
   color: #a19c72;
 }
-.entry-card p {
-  font-size: 10px;
-  line-height: 1.9;
-  color: #878b7d;
-  margin: 9px 0 11px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.entry-card-meta {
-  font-size: 9px;
-  color: #8a9080;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.entry-card-meta span {
-  background: #e4e8da;
-  color: #737e65;
-  border-radius: 3px;
-  padding: 2px 5px;
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.entry-panel-footer {
-  font-size: 9px;
-  letter-spacing: 0.5px;
-  color: #989c8f;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 18px;
-}
 .list-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   color: #8c9282;
-  padding: 50px 10px;
+  padding: 24px 10px;
   font-size: 12px;
 }
 .list-empty button {
@@ -1288,6 +1247,14 @@ button.primary:hover {
 .mobile-menu {
   display: none;
 }
+.mobile-menu.desktop-visible {
+  display: flex;
+}
+@media (min-width: 901px) {
+  .sidebar.collapsed {
+    display: none;
+  }
+}
 .sidebar-scrim {
   display: none;
 }
@@ -1404,19 +1371,13 @@ button.primary:hover {
 .entry-card-title strong {
   font-size: 13px;
 }
-.entry-card p {
-  font-size: 12px;
-  line-height: 1.8;
-}
-.entry-card-meta,
 .month-label,
 .entry-panel-head span,
 .document-kicker > span:last-child,
 .save-status,
 .tag-chip,
 .tags-input input,
-.editor-foot,
-.entry-panel-footer {
+.editor-foot {
   font-size: 11px;
 }
 .property-row,
@@ -1436,14 +1397,10 @@ button.primary:hover {
 .nav-section-title,
 .nav-item small,
 .sidebar-hint,
-.workspace-footer > div > span,
 .breadcrumbs,
 .save-status,
 .entry-panel-head span,
 .month-label,
-.entry-card p,
-.entry-card-meta,
-.entry-panel-footer,
 .document-kicker > span:last-child,
 .property-label,
 .editor-foot,
@@ -1483,12 +1440,6 @@ input::placeholder {
     padding-left: 85px;
     padding-right: 85px;
   }
-  .entry-panel {
-    width: 300px;
-  }
-  .sidebar {
-    width: 240px;
-  }
   .tiptap {
     font-size: 15px;
   }
@@ -1497,14 +1448,6 @@ input::placeholder {
   }
 }
 @media (max-width: 1150px) {
-  .sidebar {
-    width: 200px;
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-  .entry-panel {
-    width: 238px;
-  }
   .document {
     padding: 45px 34px;
   }
@@ -1536,10 +1479,12 @@ input::placeholder {
     inset: 0 auto 0 0;
     z-index: 30;
     transform: translateX(-100%);
-    width: 235px;
+    visibility: hidden;
+    width: min(280px, 85vw);
   }
   .sidebar.open {
     transform: translateX(0);
+    visibility: visible;
   }
   .sidebar .brand .icon-button {
     opacity: 1;
@@ -1556,9 +1501,6 @@ input::placeholder {
   }
   .mobile-menu {
     display: flex;
-  }
-  .entry-panel {
-    width: 235px;
   }
   .document {
     padding: 42px 30px;
@@ -1596,17 +1538,6 @@ input::placeholder {
   .save-status {
     margin-right: 3px;
     font-size: 9px;
-  }
-  .entry-panel {
-    display: none;
-    width: 100%;
-    border: 0;
-  }
-  .show-list .entry-panel {
-    display: flex;
-  }
-  .show-list .document-panel {
-    display: none;
   }
   .document {
     padding: 33px 24px;
