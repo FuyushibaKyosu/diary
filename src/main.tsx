@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import { draftStore, type LocalDraft } from "./drafts";
+import { useSlashMenu } from "./SlashMenu";
 
 type Entry = {
   id: string;
@@ -281,7 +282,9 @@ function DiaryEditor({
   onChangeRef.current = onChange;
   errorRef.current = onError;
   const [uploading, setUploading] = useState(false),
+    [formatting, setFormatting] = useState(false),
     [, setTick] = useState(0);
+  const slashKeyDown = useRef<(event: KeyboardEvent) => boolean>(() => false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -291,13 +294,14 @@ function DiaryEditor({
       Image,
       TaskList,
       TaskItem.configure({ nested: true }),
-      Placeholder.configure({ placeholder: "从此刻的一个想法开始……" }),
+      Placeholder.configure({ placeholder: "写点什么，或输入 / 选择区块……" }),
     ],
     content: entry.body,
     editable: !readOnly,
     onUpdate: ({ editor }) => onChangeRef.current(editor.getJSON()),
     onSelectionUpdate: () => setTick((t) => t + 1),
     editorProps: {
+      handleKeyDown: (_view, event) => slashKeyDown.current(event),
       attributes: {
         "aria-label": "日记正文",
         role: "textbox",
@@ -326,6 +330,8 @@ function DiaryEditor({
       },
     },
   });
+  const slash = useSlashMenu(editor, () => fileRef.current?.click());
+  slashKeyDown.current = slash.handleKeyDown;
   async function upload(files: File[]) {
     if (readOnly) return;
     setUploading(true);
@@ -356,8 +362,22 @@ function DiaryEditor({
   if (!editor) return null;
   return (
     <>
+      {!readOnly && (
+        <div className="editor-controls">
+          <span>{uploading ? "正在上传图片…" : "输入 / 添加区块"}</span>
+          <button
+            type="button"
+            aria-expanded={formatting}
+            onClick={() => setFormatting(!formatting)}
+          >
+            Aa <span>文字格式</span>
+          </button>
+        </div>
+      )}
       <div
-        className={"editor-toolbar" + (readOnly ? " readonly" : "")}
+        className={
+          "editor-toolbar" + (readOnly || !formatting ? " readonly" : "")
+        }
         aria-label="文本格式"
       >
         <IconButton
@@ -449,14 +469,13 @@ function DiaryEditor({
         />
       </div>
       <EditorContent editor={editor} />
+      {slash.menu}
       <div className="editor-foot">
         <span>
           {textOf(entry.body).replace(/\s/g, "").length.toLocaleString()} 字
         </span>
         <span>
-          {readOnly
-            ? "恢复后可以继续编辑"
-            : "文字自动保存 · 支持粘贴或拖入图片"}
+          {readOnly ? "恢复后可以继续编辑" : "自动保存 · / 区块 · 支持粘贴图片"}
         </span>
       </div>
     </>

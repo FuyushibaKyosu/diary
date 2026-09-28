@@ -683,6 +683,106 @@ button.primary:hover {
   padding: 7px 0;
   margin-bottom: 27px;
 }
+.editor-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 8px 0;
+  margin-bottom: 18px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.editor-controls button {
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+.editor-controls button span {
+  margin-left: 5px;
+  font-size: 11px;
+}
+.slash-menu {
+  position: fixed;
+  z-index: 45;
+  width: min(288px, calc(100vw - 16px));
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  background: #fff;
+  border: 1px solid #e7e7df;
+  border-radius: 8px;
+  box-shadow:
+    0 5px 24px #252a211c,
+    0 2px 5px #252a210a;
+}
+.slash-menu-heading,
+.slash-menu-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 9px;
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.slash-menu-heading span {
+  font-size: 10px;
+}
+.slash-menu-foot {
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  font-size: 10px;
+}
+.slash-options {
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+.slash-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+  min-height: 54px;
+  padding: 7px 8px;
+  text-align: left;
+  border-radius: 5px;
+}
+.slash-option[aria-selected="true"] {
+  background: #eef0e9;
+}
+.slash-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: #5e6853;
+  flex-shrink: 0;
+}
+.slash-option strong,
+.slash-option small {
+  display: block;
+}
+.slash-option strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.slash-option small {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.slash-empty {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+  padding: 10px;
+}
 .editor-toolbar .icon-button {
   width: 29px;
   height: 29px;
@@ -796,7 +896,7 @@ button.primary:hover {
 .tiptap ul[data-type="taskList"] input {
   accent-color: var(--sage);
 }
-.tiptap p.is-editor-empty:first-child:before {
+.tiptap p.is-empty:before {
   content: attr(data-placeholder);
   float: left;
   color: #a0a494;
