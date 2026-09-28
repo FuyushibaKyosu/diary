@@ -1278,12 +1278,6 @@ function App() {
                       </div>
                     )}
                     <article className="document">
-                      <div className="document-kicker">
-                        <span className="page-emblem">
-                          <NotebookPen size={32} strokeWidth={1.2} />
-                        </span>
-                        <span>{dateLabel(draft.date)}</span>
-                      </div>
                       <input
                         className="document-title"
                         aria-label="日记标题"
@@ -1321,7 +1315,7 @@ function App() {
                             disabled={!!draft.deleted_at}
                             onChange={(e) => edit({ mood: e.target.value })}
                           >
-                            <option value="">今天感觉怎么样？</option>
+                            <option value="">选择心情</option>
                             {["愉快", "平静", "充实", "低落", "疲惫"].map(
                               (m) => (
                                 <option key={m}>{m}</option>

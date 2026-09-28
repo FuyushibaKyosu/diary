@@ -567,37 +567,26 @@ button.primary:hover {
   flex: 1;
 }
 .document {
-  max-width: 860px;
+  max-width: 960px;
   margin: auto;
-  padding: 64px 64px 60px;
-}
-.document-kicker {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
+  padding: 28px 48px 48px;
 }
 .page-emblem {
   color: #596747;
   display: flex;
   align-items: center;
 }
-.document-kicker > span:last-child {
-  font-size: 10px;
-  letter-spacing: 0.8px;
-  color: #959a8a;
-}
 .document-title {
   display: block;
   width: 100%;
   border: 0;
   outline: none !important;
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 650;
   letter-spacing: -0.8px;
   color: #343b2e;
   background: transparent;
-  padding: 4px 0 12px;
+  padding: 0 0 8px;
   line-height: 1.4;
   text-overflow: ellipsis;
 }
@@ -606,29 +595,34 @@ button.primary:hover {
 }
 .properties {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 17px 0 25px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px 18px;
+  padding: 0 0 10px;
 }
 .property-row {
   display: flex;
   align-items: center;
-  min-height: 32px;
+  min-height: 28px;
+  min-width: 0;
   font-size: 11px;
+}
+.property-row:last-child {
+  flex: 1 1 170px;
+  align-items: baseline;
 }
 .property-label {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
   color: #919386;
-  width: 91px;
   flex-shrink: 0;
 }
 .property-row > input,
 .property-row > select {
   border: 0;
   background: transparent;
-  padding: 5px 7px;
+  padding: 4px 5px;
   font-size: 11px;
   color: #747c68;
   border-radius: 4px;
@@ -648,6 +642,7 @@ button.primary:hover {
   flex-wrap: wrap;
   align-items: center;
   padding-left: 5px;
+  min-width: 0;
 }
 .tag-chip {
   display: inline-flex;
@@ -659,6 +654,8 @@ button.primary:hover {
   background: #edf0e6;
   color: #748263;
   border-radius: 3px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .tag-chip button {
   display: flex;
@@ -680,8 +677,8 @@ button.primary:hover {
   gap: 2px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  padding: 7px 0;
-  margin-bottom: 27px;
+  padding: 5px 0;
+  margin-bottom: 12px;
 }
 .editor-controls {
   display: flex;
@@ -689,8 +686,8 @@ button.primary:hover {
   justify-content: space-between;
   gap: 12px;
   border-top: 1px solid var(--line);
-  padding: 8px 0;
-  margin-bottom: 18px;
+  padding: 3px 0;
+  margin-bottom: 10px;
   font-size: 11px;
   color: var(--muted);
 }
@@ -1473,7 +1470,6 @@ button.primary:hover {
 }
 .month-label,
 .entry-panel-head span,
-.document-kicker > span:last-child,
 .save-status,
 .tag-chip,
 .tags-input input,
@@ -1501,7 +1497,6 @@ button.primary:hover {
 .save-status,
 .entry-panel-head span,
 .month-label,
-.document-kicker > span:last-child,
 .property-label,
 .editor-foot,
 .auth-description,
@@ -1535,21 +1530,20 @@ input::placeholder {
 }
 @media (min-width: 1500px) {
   .document {
-    padding-top: 78px;
-    max-width: 930px;
-    padding-left: 85px;
-    padding-right: 85px;
+    max-width: 1040px;
+    padding-left: 60px;
+    padding-right: 60px;
   }
   .tiptap {
     font-size: 15px;
   }
   .document-title {
-    font-size: 38px;
+    font-size: 32px;
   }
 }
 @media (max-width: 1150px) {
   .document {
-    padding: 45px 34px;
+    padding: 24px 34px 40px;
   }
   .document-title {
     font-size: 28px;
@@ -1568,9 +1562,6 @@ input::placeholder {
   }
   .editor-toolbar .icon-button {
     width: 27px;
-  }
-  .document-kicker > span:last-child {
-    letter-spacing: 0;
   }
 }
 @media (max-width: 900px) {
@@ -1603,7 +1594,7 @@ input::placeholder {
     display: flex;
   }
   .document {
-    padding: 42px 30px;
+    padding: 24px 30px 40px;
   }
   .topbar {
     padding: 0 15px;
@@ -1640,16 +1631,16 @@ input::placeholder {
     font-size: 9px;
   }
   .document {
-    padding: 33px 24px;
+    padding: 20px 24px 36px;
   }
   .document-title {
-    font-size: 28px;
+    font-size: 26px;
   }
-  .document-kicker {
-    margin-bottom: 19px;
+  .properties {
+    gap: 2px 12px;
   }
-  .document-kicker > span:last-child {
-    font-size: 9px;
+  .property-label {
+    gap: 4px;
   }
   .editor-toolbar {
     flex-wrap: wrap;
