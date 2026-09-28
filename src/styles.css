@@ -50,10 +50,15 @@ input,
 select {
   outline-offset: 3px;
 }
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-[contenteditable]:focus-visible {
+:focus {
+  outline: none;
+}
+:where(:root[data-focus-mode="keyboard"]) button:focus-visible,
+:where(:root[data-focus-mode="keyboard"]) input:focus-visible,
+:where(:root[data-focus-mode="keyboard"]) select:focus-visible,
+:where(:root[data-focus-mode="keyboard"]) textarea:focus-visible,
+:where(:root[data-focus-mode="keyboard"]) a:focus-visible,
+:where(:root[data-focus-mode="keyboard"]) [contenteditable]:focus-visible {
   outline: 2px solid #7b916a;
 }
 button {
@@ -1458,16 +1463,16 @@ button.primary:hover {
 .modal-empty {
   color: #707768;
 }
-.document-title:focus-visible {
+:where(:root[data-focus-mode="keyboard"]) .document-title:focus-visible {
   outline: 2px solid #7b916a !important;
   outline-offset: 5px;
 }
 input::placeholder {
   color: #7b8173;
 }
-.password-field:focus-within,
-.list-search:focus-within,
-.global-search:focus-within {
+:where(:root[data-focus-mode="keyboard"]) .password-field:focus-within,
+:where(:root[data-focus-mode="keyboard"]) .list-search:focus-within,
+:where(:root[data-focus-mode="keyboard"]) .global-search:focus-within {
   outline: 2px solid #7b916a;
   outline-offset: 2px;
 }

@@ -463,6 +463,24 @@ function DiaryEditor({
   );
 }
 function App() {
+  useEffect(() => {
+    // Text inputs can match :focus-visible after a click, so track Tab navigation.
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Tab") {
+        document.documentElement.dataset.focusMode = "keyboard";
+      }
+    };
+    const onPointerDown = () => {
+      document.documentElement.dataset.focusMode = "pointer";
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+    };
+  }, []);
+
   const [auth, setAuth] = useState<{
       configured: boolean;
       authenticated: boolean;
