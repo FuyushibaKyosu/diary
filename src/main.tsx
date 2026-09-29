@@ -50,6 +50,7 @@ import {
 import "./styles.css";
 import { draftStore, type LocalDraft } from "./drafts";
 import { useSlashMenu } from "./SlashMenu";
+import { DatePicker, MoodPicker } from "./PropertyPickers";
 
 type Entry = {
   id: string;
@@ -1293,15 +1294,11 @@ function App() {
                             <CalendarDays size={15} />
                             日期
                           </span>
-                          <input
-                            aria-label="日记日期"
-                            type="date"
+                          <DatePicker
+                            key={`date-${draft.id}`}
                             value={draft.date}
                             disabled={!!draft.deleted_at}
-                            onChange={(e) => {
-                              if (e.target.value)
-                                edit({ date: e.target.value });
-                            }}
+                            onChange={(date) => edit({ date })}
                           />
                         </div>
                         <div className="property-row">
@@ -1309,19 +1306,12 @@ function App() {
                             <Smile size={15} />
                             心情
                           </span>
-                          <select
-                            aria-label="今天的心情"
+                          <MoodPicker
+                            key={`mood-${draft.id}`}
                             value={draft.mood}
                             disabled={!!draft.deleted_at}
-                            onChange={(e) => edit({ mood: e.target.value })}
-                          >
-                            <option value="">选择心情</option>
-                            {["愉快", "平静", "充实", "低落", "疲惫"].map(
-                              (m) => (
-                                <option key={m}>{m}</option>
-                              ),
-                            )}
-                          </select>
+                            onChange={(mood) => edit({ mood })}
+                          />
                         </div>
                         <div className="property-row">
                           <span className="property-label">
