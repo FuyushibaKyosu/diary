@@ -468,7 +468,7 @@ function DiaryEditor({
           }}
         />
       </div>
-      <EditorContent editor={editor} />
+      <EditorContent className="editor-content" editor={editor} />
       {slash.menu}
       <div className="editor-foot">
         <span>

@@ -569,7 +569,13 @@ button.primary:hover {
 .document {
   max-width: 960px;
   margin: auto;
-  padding: 28px 48px 48px;
+  padding: 42px 48px 28px;
+  min-height: calc(100dvh - 58px);
+  display: flex;
+  flex-direction: column;
+}
+.document > * {
+  flex-shrink: 0;
 }
 .page-emblem {
   color: #596747;
@@ -581,12 +587,12 @@ button.primary:hover {
   width: 100%;
   border: 0;
   outline: none !important;
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 650;
   letter-spacing: -0.8px;
   color: #343b2e;
   background: transparent;
-  padding: 0 0 8px;
+  padding: 0 0 16px;
   line-height: 1.4;
   text-overflow: ellipsis;
 }
@@ -597,19 +603,19 @@ button.primary:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 4px 18px;
-  padding: 0 0 10px;
+  gap: 6px 22px;
+  padding: 2px 0 18px;
 }
 .property-row {
   display: flex;
   align-items: center;
-  min-height: 28px;
+  min-height: 34px;
   min-width: 0;
   font-size: 11px;
 }
 .property-row:last-child {
   flex: 1 1 170px;
-  align-items: baseline;
+  align-items: center;
 }
 .property-label {
   display: flex;
@@ -686,9 +692,9 @@ button.primary:hover {
   justify-content: space-between;
   gap: 12px;
   border-top: 1px solid var(--line);
-  padding: 3px 0;
-  margin-bottom: 10px;
-  font-size: 11px;
+  padding: 7px 0;
+  margin-bottom: 18px;
+  font-size: 12px;
   color: var(--muted);
 }
 .editor-controls button {
@@ -698,7 +704,7 @@ button.primary:hover {
 }
 .editor-controls button span {
   margin-left: 5px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .slash-menu {
   position: fixed;
@@ -796,7 +802,13 @@ button.primary:hover {
 .editor-toolbar.readonly {
   display: none;
 }
+.editor-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 .tiptap {
+  flex: 1;
   min-height: 270px;
   outline: none;
   line-height: 1.95;
@@ -1479,13 +1491,17 @@ button.primary:hover {
 .property-row,
 .property-row > input,
 .property-row > select {
+  font-size: 13px;
+}
+.tag-chip,
+.tags-input input {
   font-size: 12px;
 }
 .tiptap {
-  font-size: 15px;
+  font-size: 16px;
 }
 .tiptap blockquote {
-  font-size: 14px;
+  font-size: inherit;
 }
 .brand span,
 .search-trigger,
@@ -1530,23 +1546,66 @@ input::placeholder {
 }
 @media (min-width: 1500px) {
   .document {
-    max-width: 1040px;
-    padding-left: 60px;
-    padding-right: 60px;
+    max-width: clamp(1100px, 65vw, 1360px);
+    padding: 54px 64px 32px;
   }
   .tiptap {
-    font-size: 15px;
+    font-size: clamp(17px, 0.4vw + 10px, 20px);
+    line-height: 1.9;
   }
   .document-title {
-    font-size: 32px;
+    font-size: clamp(36px, 1.6vw + 6px, 42px);
+    padding-bottom: 20px;
+  }
+  .properties {
+    padding-bottom: 22px;
+    gap: 8px 26px;
+  }
+  .property-row,
+  .property-row > input,
+  .property-row > select {
+    font-size: 14px;
+  }
+  .tag-chip,
+  .tags-input input,
+  .editor-controls,
+  .editor-controls button span,
+  .editor-foot {
+    font-size: 13px;
+  }
+  .tags-input input {
+    width: 120px;
+  }
+  .tiptap h2 {
+    font-size: 1.4em;
+  }
+  .tiptap h3 {
+    font-size: 1.15em;
+  }
+  .sidebar {
+    width: clamp(270px, 15vw, 310px);
+  }
+  .nav-item,
+  .new-entry,
+  .search-trigger,
+  .entry-card-title strong {
+    font-size: 14px;
+  }
+  .breadcrumbs,
+  .save-status,
+  .list-search input,
+  .nav-section-title,
+  .month-label,
+  .entry-date {
+    font-size: 12px;
   }
 }
 @media (max-width: 1150px) {
   .document {
-    padding: 24px 34px 40px;
+    padding: 32px 34px 28px;
   }
   .document-title {
-    font-size: 28px;
+    font-size: 30px;
   }
   .topbar {
     padding: 0 20px;
@@ -1594,7 +1653,7 @@ input::placeholder {
     display: flex;
   }
   .document {
-    padding: 24px 30px 40px;
+    padding: 32px 30px 28px;
   }
   .topbar {
     padding: 0 15px;
@@ -1631,10 +1690,11 @@ input::placeholder {
     font-size: 9px;
   }
   .document {
-    padding: 20px 24px 36px;
+    padding: 24px 24px 24px;
+    min-height: calc(100dvh - 54px);
   }
   .document-title {
-    font-size: 26px;
+    font-size: 28px;
   }
   .properties {
     gap: 2px 12px;
