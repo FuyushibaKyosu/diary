@@ -16,6 +16,20 @@ assert.match(html, /页间/);
 const asset = html.match(/src="(\/assets\/[^\"]+\.js)"/)?.[1];
 assert.ok(asset, "Production frontend bundle must be served");
 assert.equal((await fetch(base + asset)).status, 200);
+for (const path of [
+  "/entries/deep-link",
+  "/calendar/2026-09",
+  "/favorites",
+  "/tags/%E6%97%A5%E5%B8%B8",
+]) {
+  const deepLink = await fetch(base + path);
+  assert.equal(deepLink.status, 200);
+  assert.equal(
+    await deepLink.text(),
+    html,
+    "Deep links must serve the app shell on refresh",
+  );
+}
 assert.equal((await fetch(base + "/api/entries")).status, 401);
 // Run only against the disposable CI container, never an existing diary space.
 const auth = await (await fetch(base + "/api/auth")).json();

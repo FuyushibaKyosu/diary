@@ -51,6 +51,14 @@ import "./styles.css";
 import { draftStore, type LocalDraft } from "./drafts";
 import { useSlashMenu } from "./SlashMenu";
 import { DatePicker, MoodPicker } from "./PropertyPickers";
+import {
+  entriesForRoute,
+  resolveRoute,
+  routeUrl,
+  type Route,
+  type View,
+} from "./routes";
+import { browserHistory, createNavigation } from "./navigation";
 
 type Entry = {
   id: string;
@@ -66,7 +74,6 @@ type Entry = {
   updated_at: string;
   deleted_at: string | null;
 };
-type View = "all" | "calendar" | "favorites" | "trash" | "tag";
 type HistoryItem = { id: string; created_at: string; snapshot: Entry };
 const localDrafts = (() => {
   try {
@@ -511,6 +518,8 @@ function App() {
     [view, setView] = useState<View>("all"),
     [tag, setTag] = useState(""),
     [query, setQuery] = useState("");
+  const [routeError, setRouteError] = useState("");
+  const navigation = useRef<ReturnType<typeof createNavigation> | null>(null);
   const [modal, setModal] = useState<
       "search" | "settings" | "history" | "drafts" | null
     >(null),
@@ -591,18 +600,66 @@ function App() {
     setMenu(false);
     if (dirty.current) timer.current = setTimeout(() => void flush(), 900);
   }
+  function applyRoute(href: string) {
+    const resolved = resolveRoute(
+      href,
+      entriesRef.current,
+      today().slice(0, 7),
+    );
+    setView(resolved.route.view);
+    setTag(resolved.route.tag || "");
+    if (resolved.route.month) setMonth(resolved.route.month);
+    setRouteError(resolved.error);
+    setQuery("");
+    setModal(null);
+    setMenu(false);
+    if (resolved.entry) {
+      if (current.current?.id !== resolved.entry.id) showEntry(resolved.entry);
+    } else {
+      current.current = null;
+      setDraft(null);
+      setSaveError("");
+    }
+    return resolved.url;
+  }
+  async function navigate(route: Route, replace = false) {
+    const target = resolveRoute(
+      routeUrl(route),
+      entriesRef.current,
+      today().slice(0, 7),
+    );
+    const allowed =
+      (await navigation.current?.navigate(target.url, replace)) ?? false;
+    if (allowed) {
+      setModal(null);
+      setQuery("");
+    }
+    return allowed;
+  }
   useEffect(() => {
+    let cancelled = false;
     if (auth?.authenticated) {
       api<Entry[]>("/entries")
         .then((data) => {
+          if (cancelled) return;
           setEntries(data);
-          const first = data.find((e) => !e.deleted_at);
-          if (first) showEntry(first);
+          navigation.current = createNavigation(
+            browserHistory(),
+            flush,
+            applyRoute,
+          );
           if (localDrafts?.list().length)
             notify("此浏览器有未保存的草稿，可在「设置与备份」中恢复");
         })
-        .catch((e) => setBootError(e.message));
+        .catch((e) => {
+          if (!cancelled) setBootError(e.message);
+        });
     }
+    return () => {
+      cancelled = true;
+      navigation.current?.dispose();
+      navigation.current = null;
+    };
   }, [auth?.authenticated]);
   const remember = (e: Entry) => {
     try {
@@ -716,36 +773,18 @@ function App() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
   const select = async (e: Entry) => {
-    if (view === "calendar" && e.id === current.current?.id) setView("all");
-    if (e.id === current.current?.id) {
+    if (
+      await navigate({
+        view: view === "calendar" ? "all" : view,
+        tag,
+        entryId: e.id,
+      })
+    )
       setSidebar(false);
-      return;
-    }
-    if (await flush()) {
-      if (view === "calendar") setView("all");
-      showEntry(e);
-      setSidebar(false);
-    }
   };
   const changeView = async (next: View, t = "") => {
-    if (!(await flush())) return;
-    setView(next);
-    setTag(t);
-    if (next === "calendar") setSidebar(false);
-    setQuery("");
-    if (next !== "calendar") {
-      const first = entriesRef.current.find((e) =>
-        next === "trash"
-          ? !!e.deleted_at
-          : !e.deleted_at &&
-            (next !== "favorites" || e.favorite) &&
-            (next !== "tag" || e.tags.includes(t)),
-      );
-      if (first) showEntry(first);
-      else {
-        current.current = null;
-        setDraft(null);
-      }
+    if (await navigate({ view: next, tag: t, month })) {
+      if (next === "calendar") setSidebar(false);
     }
   };
   async function create(date = today()) {
@@ -759,9 +798,7 @@ function App() {
       // An edit could happen while the create request was on the network.
       // Keep that edit acknowledged before switching to the new document.
       if (!(await flush())) return;
-      setView("all");
-      setSidebar(false);
-      showEntry(e);
+      if (await navigate({ view: "all", entryId: e.id })) setSidebar(false);
     } catch (e) {
       notify((e as Error).message);
     }
@@ -775,13 +812,9 @@ function App() {
         const other = entriesRef.current.find(
           (e) => e.id !== current.current?.id && !e.deleted_at,
         );
-        if (other) showEntry(other);
-        else {
-          current.current = null;
-          setDraft(null);
-        }
+        await navigate({ view: "all", entryId: other?.id });
       } else {
-        setView("all");
+        await navigate({ view: "all", entryId: current.current?.id });
       }
     }
   }
@@ -816,9 +849,7 @@ function App() {
       fatal.current = false;
       const all = await api<Entry[]>("/entries");
       setEntries(all);
-      showEntry(copy);
-      setView("all");
-      setModal(null);
+      await navigate({ view: "all", entryId: copy.id });
       notify("草稿已另存为新日记，原日记保持不变");
     } catch (e) {
       notify((e as Error).message);
@@ -857,24 +888,11 @@ function App() {
   }
   const activeEntries = entries.filter((e) => !e.deleted_at),
     tags = [...new Set(activeEntries.flatMap((e) => e.tags))].sort();
-  const visible = entries
-    .filter((e) =>
-      view === "trash"
-        ? !!e.deleted_at
-        : !e.deleted_at &&
-          (view !== "favorites" || e.favorite) &&
-          (view !== "tag" || e.tags.includes(tag)),
-    )
-    .filter((e) =>
-      (e.title + " " + e.plain + " " + e.tags.join(" "))
-        .toLowerCase()
-        .includes(query.toLowerCase()),
-    )
-    .sort(
-      (a, b) =>
-        b.date.localeCompare(a.date) ||
-        b.created_at.localeCompare(a.created_at),
-    );
+  const visible = entriesForRoute(entries, { view, tag }).filter((e) =>
+    (e.title + " " + e.plain + " " + e.tags.join(" "))
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
   const title =
     view === "favorites"
       ? "我的收藏"
@@ -886,6 +904,9 @@ function App() {
             ? tag
             : "全部日记";
   const pending = saveState === "saving" || saveState === "pending";
+  useEffect(() => {
+    document.title = `${routeError ? "页面不存在" : view === "calendar" ? `${month} · 日历` : draft ? draft.title || "无标题日记" : title} · 页间`;
+  }, [draft, view, title, month, routeError]);
   if (bootError)
     return (
       <div className="boot">
@@ -1230,13 +1251,12 @@ function App() {
         {view === "calendar" ? (
           <CalendarView
             month={month}
-            setMonth={setMonth}
+            setMonth={(month) => {
+              void navigate({ view: "calendar", month });
+            }}
             entries={activeEntries}
-            onSelect={async (e) => {
-              if (await flush()) {
-                setView("all");
-                showEntry(e);
-              }
+            onSelect={(e) => {
+              void navigate({ view: "all", entryId: e.id });
             }}
             onCreate={create}
           />
@@ -1379,18 +1399,32 @@ function App() {
                   </div>
                   <p className="eyebrow">A LITTLE SPACE FOR YOURSELF</p>
                   <h1>
-                    {view === "trash" ? "让回忆慢慢归位" : "留一点时间，给自己"}
+                    {routeError
+                      ? "无法打开这个页面"
+                      : view === "trash"
+                        ? "让回忆慢慢归位"
+                        : "留一点时间，给自己"}
                   </h1>
                   <p>
-                    {view === "trash"
-                      ? "移到回收站的日记会保留在这里。"
-                      : "一段想法、一件小事，或今天的心情。"}
+                    {routeError ||
+                      (view === "trash"
+                        ? "移到回收站的日记会保留在这里。"
+                        : "一段想法、一件小事，或今天的心情。")}
                   </p>
-                  {view !== "trash" && (
-                    <button className="primary" onClick={() => void create()}>
-                      <Plus size={17} />
-                      写一篇日记
+                  {routeError ? (
+                    <button
+                      className="primary"
+                      onClick={() => void changeView("all")}
+                    >
+                      返回全部日记
                     </button>
+                  ) : (
+                    view !== "trash" && (
+                      <button className="primary" onClick={() => void create()}>
+                        <Plus size={17} />
+                        写一篇日记
+                      </button>
+                    )
                   )}
                 </div>
               )}
@@ -1429,14 +1463,7 @@ function App() {
               .map((e) => (
                 <button
                   key={e.id}
-                  onClick={async () => {
-                    if (await flush()) {
-                      setModal(null);
-                      setQuery("");
-                      setView("all");
-                      showEntry(e);
-                    }
-                  }}
+                  onClick={() => void navigate({ view: "all", entryId: e.id })}
                 >
                   <FileText size={19} />
                   <div>
