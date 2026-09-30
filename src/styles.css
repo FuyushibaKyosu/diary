@@ -352,11 +352,13 @@ button.primary:hover {
   align-items: center;
   gap: 12px;
   font-size: 11px;
+  font-weight: 400;
+  line-height: 1.5;
   color: #8b8c82;
   min-width: 0;
 }
 .breadcrumbs button {
-  font-size: 11px;
+  font: inherit;
   padding: 6px 4px;
   border-radius: 4px;
   white-space: nowrap;
